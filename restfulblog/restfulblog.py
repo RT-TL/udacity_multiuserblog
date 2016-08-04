@@ -16,6 +16,8 @@ jinja_env = jinja2.Environment(loader = jinja2.FileSystemLoader(template_dir),
 
 secret = 'LASER'
 
+### User as global var
+user = False
 
 ### GLOBAL FUNCTIONS###
 
@@ -78,7 +80,7 @@ class BlogHandler(webapp2.RequestHandler):
         self.response.out.write(*a, **kw)
 
     def render_str(self, template, **params):
-        params['user'] = self.user
+        params['user'] = user
         return render_str(template, **params)
 
     def render(self, template, **kw):
@@ -101,34 +103,14 @@ class BlogHandler(webapp2.RequestHandler):
     def logout(self):
         self.response.headers.add_header('Set-Cookie', 'user_id=; Path=/')
 
-    # Request handlers
-    def get(self, id):
-        if not id:
-            self.render('message.html', message="Gibts nicht")
-        self.handleGet(id)
-
-    def put(self, *id):
-        self.render('message.html', message="put request")
-
-    def post(self, *id):
-        # validate data
-        # id available
-        # for edit/delete: owner true
-        # success: redirect
-        # error: render edit form via self.renderForm();
-        self.render('message.html', message="post request")
-
-    def delete(self, *id):
-        self.render('message.html', message="delete request")
-
-    def handleGet(self, id):
-        return True
-
     def initialize(self, *a, **kw):
         webapp2.RequestHandler.initialize(self, *a, **kw)
         uid = self.read_secure_cookie('user_id')
-        self.user = uid and User.by_id(int(uid))
+        user = uid and User.by_id(int(uid))
 
+        if user:
+            global user
+            user = user
 
 class MainPage(BlogHandler):
   def get(self):
@@ -173,15 +155,71 @@ class User(db.Model):
 
 ## POST MODEL
 class Post(db.Model):
-    subject = db.StringProperty(required=True)
-    content = db.TextProperty(required=True)
+    subject = db.StringProperty()
+    content = db.TextProperty()
     created = db.DateTimeProperty(auto_now_add=True)
     last_modified = db.DateTimeProperty(auto_now=True)
     author = db.ReferenceProperty(User)
+    likes = db.ListProperty(db.Key)
 
-    def render(self):
+    def render(self, *user):
         self._render_text = self.content.replace('\n', '<br>')
-        return render_str("post.html", p=self)
+
+        admin = False
+
+        # Turn off admin mode if user is not owner
+        if user:
+            if self.is_owner(user[0].id()):
+                admin = True
+
+        return render_str("posts_view.html", p=self ,admin=admin, user = user)
+
+    # Receives a user object as parameter. Checks if user is owner
+    def is_owner(self, user_id):
+        if not self.author.key().id() == user_id:
+            return False
+        return True
+
+    # Get a certain post data by its ID
+    @classmethod
+    def by_id(cls, id):
+        key = db.Key.from_path('Post', int(id), parent=blog_key())
+        post = db.get(key)
+
+        if post:
+            return post
+
+    # Validate data set to the model
+    def validates(self):
+        if not self.content:
+            return False
+        if not self.subject:
+            return False
+        if not self.author:
+            return False
+        return True
+
+    # Return number of likes (integer)
+    def number_of_likes(self):
+        like_amount = len(self.likes)
+        return like_amount
+
+    # Return boolean true when user is added to like
+    def like(self):
+        self.likes.append(user.key())
+        self.put()
+
+    # Return boolean true if user is removed to like
+    def dislike(self):
+        self.likes.remove(user.key())
+        self.put()
+
+    # Return boolean true if requested user is in the like list
+    def liked_by(self):
+        # Check if user is in like-keys
+        if user.key() in self.likes:
+            return True
+        return False
 
 ## COMMENT MODEL
 class Comment(db.Model):
@@ -193,31 +231,148 @@ class Comment(db.Model):
 
     def render(self):
         self._render_text = self.content.replace('\n', '<br>')
-        return render_str("post.html", p=self)
-
-## LIKE MODEL
-class Like(db.Model):
-    author = db.ReferenceProperty(User)
-    post = db.ReferenceProperty(Post)
+        #return render_str("post.html", p=self)
 
 ### ENDPOINT-CLASSES
 
-## BLOG OVERVIEW
-class BlogFront(BlogHandler):
-    def get(self):
-        posts = greetings = Post.all().order('-created')
-        self.render('front.html', posts = posts)
 
 ## POSTS
 
+# View post handler
 class PostsController(BlogHandler):
     # define model variable that determines which forms to render/where to find them and which data to load
-    def handleGet(self, id):
-        self.render('message.html', message=str(id) + " gibts!")
+    def get(self, id):
+        post = Post.by_id(id)
 
+        if not post:
+            self.error(404)
+            return
+
+        self.render("permalink.html", p = post)
+
+class DeletePost(BlogHandler):
+    def post (self, id):
+        post = Post.by_id(id)
+
+        # Exception if not found
+        if not post:
+            self.error(404)
+            return
+
+        # Validate user is allowed to delete
+        if not post.is_owner(self.user.key().id()):
+            return self.render('error.html', message="Sorry, you can not delete this post.")
+
+        # Delete current post
+        post.delete()
+
+        # Redirect to index page
+        self.render('message.html', message="The post " + id + ' has been deleted.')
+
+class LikePost(BlogHandler):
+    def post(self, id):
+        post = Post.by_id(id)
+
+        # Allow only logged in useres
+        if not user:
+            self.redirect('/login')
+
+        # Exception if not found
+        if not post:
+            self.error(404)
+            return
+
+        # Like current post
+        post.like()
+
+        # Redirect to previous page
+        #TODO: Replace later by ajax call
+        self.redirect(self.request.referer)
+
+
+# Add post handler
+class AddPost(BlogHandler):
+
+    def get(self):
+        # Check if user is logged in
+        if not self.user:
+            self.redirect("/login")
+
+        post = Post
+        self.render('posts_form_new.html', post=post)
+
+    def post(self):
+
+        # only logged in users have access to post
+        if not self.user:
+            self.redirect('/login')
+
+        # set post data
+        subject = self.request.get('subject')
+        content = self.request.get('content')
+        author = self.user
+        post = Post(parent = blog_key(), subject = subject, content=content, author=author)
+
+        # Show validation errors
+        if not post.validates():
+            return self.render('posts_form_new.html', post=post, content=content, subject=subject, error="Invalid data for new post")
+        else:
+            # Save new data
+            post.put()
+
+        # Render permalink view
+        self.redirect('/posts/%s' % str(post.key().id()))
+
+
+# Edit post handler
+class EditPost(BlogHandler):
+
+    def get(self, id):
+        # Check if user is logged in
+        if not self.user:
+            self.redirect("/login")
+
+        # Get post data
+        post = Post.by_id(id)
+
+        # Refer to previous page if not allowed
+        if not post.is_owner(self.user.key().id()):
+            return self.render('error.html', message="Sorry, you can not edit this post.")
+
+        self.render('posts_form.html', post=post)
+
+    def post(self, id):
+
+        # only logged in users have access to post
+        if not self.user:
+            self.redirect('/login')
+
+        # get previous post data
+        post = Post.by_id(id)
+
+        # read post data
+        post.subject = self.request.get('subject')
+        post.content = self.request.get('content')
+
+        # Check ownership rights
+        if not post.is_owner(self.user.key().id()):
+            return self.render('error.html', message="Sorry, you can not edit this post.")
+
+        # Show validation errors
+        if not post.validates():
+            return self.render('posts_form.html', post=post, error="Invalid data for new post")
+
+        post.put()
+
+        # Render permalink view
+        self.render("permalink.html", p=post, message="Data stored")
+
+# Show list of all posts
 class PostsIndex(BlogHandler):
     def get(self):
-        self.render('message.html', message="Ich bin der geile index")
+        # Get all post data
+        posts = Post.all().order('-created')
+        self.render('/posts_index.html', posts=posts)
 
 ## COMMENTS
 class CommentsController(BlogHandler):
@@ -261,6 +416,7 @@ class Signup(BlogHandler):
         if not valid_password(self.password):
             params['error_password'] = "That wasn't a valid password."
             have_error = True
+
         elif self.password != self.verify:
             params['error_verify'] = "Your passwords didn't match."
             have_error = True
@@ -288,7 +444,7 @@ class Register(Signup):
             u.put()
 
             self.login(u)
-            self.redirect('/blog')
+            self.redirect('/posts/')
 
 class Login(BlogHandler):
     def get(self):
@@ -309,7 +465,7 @@ class Login(BlogHandler):
 class Logout(BlogHandler):
     def get(self):
         self.logout()
-        self.redirect('/blog')
+        self.redirect('/posts/')
 
 class Welcome(BlogHandler):
     def get(self):
@@ -319,12 +475,15 @@ class Welcome(BlogHandler):
         else:
             self.redirect('/unit2/signup')
 
+### ROUTER
 app = webapp2.WSGIApplication([('/', MainPage),
-                                webapp2.Route('/posts/<id>', PostsController),
-                               #webapp2.Route('/posts/<id>/add/edit', EditPost),#receives optional submit data and errors
+                               webapp2.Route('/posts/add', AddPost),
+                               webapp2.Route('/posts/<id>', PostsController),
+                               webapp2.Route('/posts/<id>/edit', EditPost),
+                               webapp2.Route('/posts/<id>/delete', DeletePost),
+                               webapp2.Route('/posts/<id>/like', LikePost),
                                ('/posts/', PostsIndex),
                                webapp2.Route('/comments/<id>', CommentsController),
-                               ('/blog/?', BlogFront),
                                ('/signup', Register),
                                ('/login', Login),
                                ('/logout', Logout),

@@ -12,7 +12,7 @@
     CS 253 Blog
   </a>
 
-<!-- {{user.key()}} this is the comparison value -->
+  <!-- Render login header -->
   <div class="login-area">
     {% if user %}
       {{user.name}} (<a class="login-link" href="/logout">logout</a>)
@@ -23,6 +23,12 @@
     {% endif %}
   </div>
 
+  <!-- Render message box -->
+  {% if message %}
+    <div class="message-box"><b>{{message}}</b></div>
+  {% endif %}
+
+  <!-- Render content box -->
   <div id="content">
   {% block content %}
   {% endblock %}

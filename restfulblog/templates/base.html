@@ -1,16 +1,17 @@
 <!DOCTYPE html>
-<html>
+<html xmlns="http://www.w3.org/1999/html">
 <head>
   <link type="text/css" rel="stylesheet" href="/static/main.css" />
 
-  <title>CS 253 Blog</title>
+  <title>Udacity Blog Project</title>
 </head>
 
 <body>
-  <a href="/blog" class="main-title">
-    CS 253 Blog
+  <a href="/posts/" class="main-title">
+    Essay on <strike>Men</strike> Code
   </a>
 
+  <!-- Render login area -->
   <div class="login-area">
     {% if user %}
       {{user.name}} (<a class="login-link" href="/logout">logout</a>)
@@ -20,7 +21,17 @@
       <a class="login-link" href="/signup">signup</a>
     {% endif %}
   </div>
-
+  <div class="newpost">
+    {% if user %}
+      <a class="button" href="/posts/add">Create a new post</a>
+    {% endif %}
+  </div>
+  <!-- Render message box -->
+  {% if message %}
+    <div class="message-box"><b>{{message}}</b></div>
+  {% endif %}
+  <br><br/>
+  <!-- Render content box -->
   <div id="content">
   {% block content %}
   {% endblock %}

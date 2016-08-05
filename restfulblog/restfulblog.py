@@ -206,13 +206,19 @@ class Post(db.Model):
 
     # Return boolean true when user is added to like
     def like(self):
-        self.likes.append(user.key())
-        self.put()
+        if user.key() not in self.likes:
+            self.likes.append(user.key())
+            self.put()
+            return True
+        return False
 
     # Return boolean true if user is removed to like
     def dislike(self):
-        self.likes.remove(user.key())
-        self.put()
+        if user.key() in self.likes:
+            self.likes.remove(user.key())
+            self.put()
+            return True
+        return False
 
     # Return boolean true if requested user is in the like list
     def liked_by(self):
@@ -287,6 +293,26 @@ class LikePost(BlogHandler):
 
         # Redirect to previous page
         #TODO: Replace later by ajax call
+        self.redirect(self.request.referer)
+
+class DislikePost(BlogHandler):
+    def post(self, id):
+        post = Post.by_id(id)
+
+        # Allow only logged in useres
+        if not user:
+            self.redirect('/login')
+
+        # Exception if not found
+        if not post:
+            self.error(404)
+            return
+
+        # Like current post
+        post.dislike()
+
+        # Redirect to previous page
+        # TODO: Replace later by ajax call
         self.redirect(self.request.referer)
 
 
@@ -482,6 +508,7 @@ app = webapp2.WSGIApplication([('/', MainPage),
                                webapp2.Route('/posts/<id>/edit', EditPost),
                                webapp2.Route('/posts/<id>/delete', DeletePost),
                                webapp2.Route('/posts/<id>/like', LikePost),
+                               webapp2.Route('/posts/<id>/dislike', DislikePost),
                                ('/posts/', PostsIndex),
                                webapp2.Route('/comments/<id>', CommentsController),
                                ('/signup', Register),

@@ -1,7 +1,10 @@
 {% extends "base.html" %}
 
 {% block content %}
-  <h2>Write/Edit post</h2>
+  <h2>post form</h2>
+    {% if error %}
+        <div class="error">{{error}}</div></br>
+    {% endif %}
 
     <form method="post">
       <label>
@@ -14,12 +17,10 @@
         <textarea name="content">{{post.content}}</textarea>
       </label>
 
-      <div class="error">{{error}}</div>
-
-      {% if post_id %}
-        <input type="hidden" name="post_id" value="{{post_id}}">
-      {% endif %}
-
       <input type="submit">
     </form>
+
+    {% if post.key().id() %}
+        <br/><a href="/posts/{{post.key().id()}}">Back to view</a>
+    {% endif %}
 {% endblock %}

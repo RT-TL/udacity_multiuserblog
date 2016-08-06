@@ -1,0 +1,11 @@
+<div class="comment">
+    <b>{{comment.title}}</b> by {{comment.author.name}} at {{comment.created.strftime("%b %d, %Y")}}
+    <p>{{comment.content}}</p>
+        {% if user and user.key() == comment.author.key() %}
+            <a href="/comments/{{comment.key().id()}}/edit">Edit Post</a> |
+            <form method="post" action="/comments/{{comment.key().id()}}/delete">
+                <button type="submit" name= "Delete">Delete this Comment</button>
+            </form>
+        {% endif %}
+    <br/><br/>
+</div>

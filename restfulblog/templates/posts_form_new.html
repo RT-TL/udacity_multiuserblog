@@ -1,8 +1,8 @@
 {% extends "base.html" %}
 
 {% block content %}
-  <h2>new post</h2>
-
+  <h2>New Post</h2>
+    <div class="error">{{error}}</div>
     <form method="post">
       <label>
         <div>subject</div>
@@ -10,12 +10,12 @@
       </label>
 
       <label>
-        <div>blog</div>
+        <div>Content</div>
         <textarea name="content">{{content}}</textarea>
       </label>
 
-      <div class="error">{{error}}</div>
-
       <input type="submit">
     </form>
+
+    <br/><a href="/posts/">Back to view</a>
 {% endblock %}

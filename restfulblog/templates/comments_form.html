@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+
+{% block content %}
+  <h2>Write a comment form</h2>
+    {% if error %}
+        <div class="error">{{error}}</div></br>
+    {% endif %}
+
+    <form method="post">
+      <input type="hidden" name="post_id" value="{{post_id}}">
+      <input type="hidden" name="comment_id" value="
+        {% if comment %}
+            {#{ comment.key().id() }#}
+        {% endif %}
+      ">
+      <label>
+        <div>title</div>
+        <input type="text" name="title" value="{{comment.title if comment}}">
+      </label>
+
+      <label>
+        <div>comment</div>
+        <textarea rows="5" name="content">{{comment.content if comment}}</textarea>
+      </label>
+
+      <input type="submit">
+    </form>
+
+        <br/><a href="/posts/{{post_id}}">Back to view</a>
+{% endblock %}

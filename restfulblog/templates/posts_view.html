@@ -1,0 +1,41 @@
+<div class="post">
+  <div class="post-heading">
+    <div class="post-title">
+      <a href="/posts/{{p.key().id()}}">{{p.subject}}</a> from {{p.author.name}}
+    </div>
+    <div class="post-date">
+      {{p.created.strftime("%b %d, %Y")}}
+    </div>
+  </div>
+  <div class="post-content">
+    {{p._render_text | safe}}
+  </div>
+  <br/>
+  {% if admin %}
+    <section class="admin-function">
+      <!-- Delete post -->
+      <div class="delete-post">
+        <form method="post" action="/posts/{{p.key().id()}}/delete">
+            <button type="submit" name= "Delete">Delete this Post</button> | <a href="/posts/{{p.key().id()}}/edit">Edit this post</a>
+        </form>
+      </div>
+    </section>
+  {% else %}
+    {% if p.liked == True %}
+        <form method="post" action="/posts/{{p.key().id()}}/dislike">
+            <button type="submit" name= "Dislike">Dislike this Post</button>
+        </form>
+    {% else %}
+        <form method="post" action="/posts/{{p.key().id()}}/like">
+            <button type="submit" name= "Like">Like this Post</button>
+        </form>
+    {% endif %}
+  {% endif %}
+  {{p.likes_count}} people like this post
+<br/><br/>
+    <h2 class="comments">Comments</h2>
+    {% for comment in p.comment_list %}
+        {{ comment.render() | safe }}
+    {% endfor %}
+    <a href="/posts/{{p.key().id()}}/comments/add">Comment on this post</a>
+</div>

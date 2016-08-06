@@ -122,3 +122,8 @@ input[type=submit] {
   width: 100%;
   text-align: center;
 }
+
+/* Comment Styles */
+.comment {
+    margin-left: 35px;
+}

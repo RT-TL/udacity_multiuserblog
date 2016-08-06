@@ -7,7 +7,6 @@ This project represents basic web usage aspects: Creation of accounts, simple ri
 * [Quick start](#quick-start)
 * [Requirements](#requirements)
 * [Project Structure](#project-structure)
-* [Frontende Development](#frontend-development)
 * [License](#license)
 
 
@@ -15,50 +14,29 @@ This project represents basic web usage aspects: Creation of accounts, simple ri
 
 Clone repository:
 ```
-git clone https://github.com/Roomtailors/udacity_portfolio.git
+git clone https://github.com/Roomtailors/udacity_multiuserblog.git
 ```
 
-To begin install dependencies by running from root:
-
-```
-npm-install
-```
+To begin you need to install all required modules, especially webapp2: Find it here: [https://pypi.python.org/pypi/webapp2]
 
 ## Requirements
 
-1. Clone git repository with 
-2. Node-js and npm for dependecy installation
-
-All other dependencies are installed through nmp install
+1. Install Python 2.x
+2. Clone git repository 
+3. Modules for import os, re, random, hashlib, hmac, letters, webapp2, jinja2 [http://jinja.pocoo.org/docs/dev/]
 
 ## Project Structure
 
-    |-- .gitignore
-    |-- Gruntfile.js
-    |-- index.html
-    |-- package.json
-    |-- README.md
-    |-- img-source // save your images here
-    |-- less // edit these to create new style sheets
-    |   |-- custom.less
-    |   |-- layout.less
-    |   |-- variables.less
-    |-- resources // production only
-        |-- css
-        |-- img
-        |-- js
+The blog is organized in a rest-like manner. Available endpoints are:
 
-## Frontend Development
+/posts/
+/likes/
+/comments/
+/signup
+/login
+/logout
 
-To change any frontend aspects consider the following hints.
-
-- Do not modify css files. Modify less-files instead and compile them.
-- Store images in img-source and use grunt to create different resolutions and minimized versions.
-- In order to create minified css and optimized responsive images run from root:
-´´´
-grunt
-´´´
-- consider using lazyload for responsive images
+Resources can be modified through there add/edit/delete actions. URLs are build either by directly adressing resourdces (/posts/add/ or /posts/<id>/edit) or via their parent resource (e.g. /posts/<id>/like/<id>/delete)
 
 ## License
 

@@ -36,7 +36,15 @@ The blog is organized in a rest-like manner. Available endpoints are:
 /login
 /logout
 
-Resources can be modified through there add/edit/delete actions. URLs are build either by directly adressing resourdces (/posts/add/ or /posts/<id>/edit) or via their parent resource (e.g. /posts/<id>/like/<id>/delete)
+Resources can be modified through there add/edit/delete actions. URLs are build either by directly adressing resourdces (/posts/add/ or /posts/<id>/edit) or via their parent resource, for example:
+ 
+```
+/posts/<id#1>/like/<id#2>/delete    = removes a like with <id#2> from post with <id#1>
+/posts/add                          = creates a new resource (add) in posts
+/posts/<id>/edit                    = edits the resource post with <id>
+```
+
+To get the edit form, call the endpoint with GET method. To change it POST the data to the same endpoint.
 
 ## License
 

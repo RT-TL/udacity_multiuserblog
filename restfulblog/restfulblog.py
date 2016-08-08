@@ -3,16 +3,15 @@ import re
 import random
 import hashlib
 import hmac
-from string import letters
-
 import webapp2
 import jinja2
 
+from string import letters
 from google.appengine.ext import db
 
 template_dir = os.path.join(os.path.dirname(__file__), 'templates')
-jinja_env = jinja2.Environment(loader = jinja2.FileSystemLoader(template_dir),
-                               autoescape = True)
+jinja_env = jinja2.Environment(loader=jinja2.FileSystemLoader(template_dir),
+                               autoescape=True)
 
 ### GLOBALS
 
@@ -44,7 +43,7 @@ def make_salt(length = 5):
     return ''.join(random.choice(letters) for x in xrange(length))
 
 # Return secure string for cookie with hash and salt
-def make_pw_hash(name, pw, salt = None):
+def make_pw_hash(name, pw, salt=None):
     if not salt:
         salt = make_salt()
     h = hashlib.sha256(name + pw + salt).hexdigest()
@@ -56,7 +55,7 @@ def valid_pw(name, password, h):
     return h == make_pw_hash(name, password, salt)
 
 # Return user key
-def users_key(group = 'default'):
+def users_key(group='default'):
     return db.Key.from_path('users', group)
 
 # Create secure value
@@ -129,14 +128,14 @@ class MainPage(BlogHandler):
 ## USER MODEL
 
 class User(db.Model):
-    name = db.StringProperty(required = True)
-    pw_hash = db.StringProperty(required = True)
+    name = db.StringProperty(required=True)
+    pw_hash = db.StringProperty(required=True)
     email = db.StringProperty()
 
     # Get User by ID
     @classmethod
     def by_id(cls, uid):
-        return User.get_by_id(uid, parent = users_key())
+        return User.get_by_id(uid, parent=users_key())
 
     # Get User by Name
     @classmethod
@@ -146,7 +145,7 @@ class User(db.Model):
 
     # Register new user
     @classmethod
-    def register(cls, name, pw, email = None):
+    def register(cls, name, pw, email=None):
         pw_hash = make_pw_hash(name, pw)
         return User(parent = users_key(),
                     name = name,
@@ -189,7 +188,7 @@ class Post(db.Model):
                 admin = True
 
         # Render post
-        return render_str("posts_view.html", p=self ,admin=admin, user = user)
+        return render_str("posts_view.html", p=self, admin=admin, user=user)
 
     # Receives a user object as parameter. Checks if user is owner
     def is_owner(self):
@@ -310,7 +309,7 @@ class PostsController(BlogHandler):
             self.error(404)
             return
 
-        self.render("permalink.html", p = post)
+        self.render("permalink.html", p=post)
 
 # Add post handler
 class AddPost(BlogHandler):
@@ -589,8 +588,8 @@ class Signup(BlogHandler):
         self.verify = self.request.get('verify')
         self.email = self.request.get('email')
 
-        params = dict(username = self.username,
-                      email = self.email)
+        params = dict(username=self.username,
+                      email=self.email)
 
         if not valid_username(self.username):
             params['error_username'] = "That's not a valid username."
@@ -621,7 +620,7 @@ class Register(Signup):
         u = User.by_name(self.username)
         if u:
             msg = 'That user already exists.'
-            self.render('signup-form.html', error_username = msg)
+            self.render('signup-form.html', error_username=msg)
         else:
             u = User.register(self.username, self.password, self.email)
             u.put()
@@ -643,7 +642,7 @@ class Login(BlogHandler):
             self.redirect('/posts/')
         else:
             msg = 'Invalid login'
-            self.render('login-form.html', error = msg)
+            self.render('login-form.html', error=msg)
 
 class Logout(BlogHandler):
     def get(self):
